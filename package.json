@@ -1,0 +1,22 @@
+{
+  "name": "futurefriends-landing",
+  "version": "1.0.0",
+  "description": "Coming Soon landing page with TLS support",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "setup": "npm install && node generate-cert.js",
+    "install-cert": "powershell -ExecutionPolicy Bypass -File ./install-cert.ps1",
+    "full-setup": "npm install && node generate-cert.js && npm run install-cert"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "keywords": ["landing-page", "https", "tls"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "selfsigned": "^2.4.1"
+  }
+}
