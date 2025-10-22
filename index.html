@@ -122,6 +122,37 @@
             opacity: 0.8;
         }
 
+        .test-button {
+            margin-top: 1rem;
+            padding: 0.75rem 2rem;
+            font-size: 1rem;
+            font-weight: 600;
+            color: white;
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .test-button:hover {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.5);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .test-button:active {
+            transform: translateY(0);
+        }
+
+        .test-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
         @media (max-width: 768px) {
             h1 {
                 font-size: 2.5rem;
@@ -150,6 +181,9 @@
                 <strong>Database Status:</strong> Checking...
             </div>
             <div class="db-details" id="dbDetails"></div>
+            <button class="test-button" id="testButton" onclick="checkDatabaseStatus()">
+                🔄 Test Connection
+            </button>
         </div>
         <div class="footer">
             Secured with TLS encryption
@@ -161,6 +195,20 @@
         async function checkDatabaseStatus() {
             const statusEl = document.getElementById('dbStatus');
             const detailsEl = document.getElementById('dbDetails');
+            const testButton = document.getElementById('testButton');
+            
+            // Disable button and show checking state
+            testButton.disabled = true;
+            testButton.textContent = '⏳ Testing...';
+            
+            statusEl.innerHTML = `
+                <div>
+                    <span class="status-indicator status-checking"></span>
+                    <strong>Database Status:</strong> Checking...
+                </div>
+                <div class="db-details">Running connection test...</div>
+                <button class="test-button" id="testButton" disabled>⏳ Testing...</button>
+            `;
             
             try {
                 const response = await fetch('/api/db-status');
@@ -176,6 +224,7 @@
                             Database: ${data.database || 'N/A'}<br>
                             Last checked: ${new Date(data.timestamp).toLocaleString()}
                         </div>
+                        <button class="test-button" id="testButton" onclick="checkDatabaseStatus()">🔄 Test Connection</button>
                     `;
                 } else {
                     statusEl.innerHTML = `
@@ -187,6 +236,7 @@
                             ${data.message || 'Connection failed'}<br>
                             ${data.error ? `Error: ${data.error}` : ''}
                         </div>
+                        <button class="test-button" id="testButton" onclick="checkDatabaseStatus()">🔄 Test Connection</button>
                     `;
                 }
             } catch (error) {
@@ -199,15 +249,11 @@
                         Could not check database status<br>
                         ${error.message}
                     </div>
+                    <button class="test-button" id="testButton" onclick="checkDatabaseStatus()">🔄 Test Connection</button>
                 `;
             }
         }
 
-        // Check status on page load
-        checkDatabaseStatus();
-
-        // Recheck every 30 seconds
-        setInterval(checkDatabaseStatus, 30000);
     </script>
 </body>
 </html>
