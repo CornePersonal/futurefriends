@@ -11,10 +11,8 @@ const path = require('path');
 const isAzure = !!process.env.WEBSITE_INSTANCE_ID; // auto-detect if running in Azure
 const PORT = process.env.PORT || 3000;
 
-// Read HTML file
 const htmlContent = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8');
 
-// Server handler (shared by both HTTP/HTTPS)
 const requestHandler = (req, res) => {
   res.writeHead(200, {
     'Content-Type': 'text/html',
@@ -26,7 +24,6 @@ const requestHandler = (req, res) => {
 };
 
 if (isAzure) {
-  // 🟩 Running in Azure
   const server = http.createServer(requestHandler);
 
   server.listen(PORT, '0.0.0.0', () => {
@@ -41,7 +38,6 @@ if (isAzure) {
     console.log('╚═══════════════════════════════════════════════════════════╝');
   });
 } else {
-  // 🧑‍💻 Local development (HTTPS if certs available)
   let server;
   const certDir = path.join(__dirname, 'certs');
   const keyPath = path.join(certDir, 'key.pem');
@@ -74,6 +70,5 @@ if (isAzure) {
   }
 }
 
-// Shared error/shutdown handlers
 process.on('SIGTERM', () => process.exit(0));
 process.on('SIGINT', () => process.exit(0));
