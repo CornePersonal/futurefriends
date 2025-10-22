@@ -82,6 +82,46 @@
             opacity: 0.7;
         }
 
+        .db-status {
+            margin-top: 2rem;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+            animation: blink 1.5s ease-in-out infinite;
+        }
+
+        .status-connected {
+            background-color: #4ade80;
+        }
+
+        .status-disconnected {
+            background-color: #f87171;
+        }
+
+        .status-checking {
+            background-color: #fbbf24;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        .db-details {
+            margin-top: 0.5rem;
+            font-size: 0.85rem;
+            opacity: 0.8;
+        }
+
         @media (max-width: 768px) {
             h1 {
                 font-size: 2.5rem;
@@ -104,9 +144,70 @@
             We're working hard to bring you something amazing. 
             Our new platform will be launching very soon.
         </div>
+        <div class="db-status" id="dbStatus">
+            <div>
+                <span class="status-indicator status-checking"></span>
+                <strong>Database Status:</strong> Checking...
+            </div>
+            <div class="db-details" id="dbDetails"></div>
+        </div>
         <div class="footer">
             Secured with TLS encryption
         </div>
     </div>
+
+    <script>
+        // Check database connection status
+        async function checkDatabaseStatus() {
+            const statusEl = document.getElementById('dbStatus');
+            const detailsEl = document.getElementById('dbDetails');
+            
+            try {
+                const response = await fetch('/api/db-status');
+                const data = await response.json();
+                
+                if (data.connected) {
+                    statusEl.innerHTML = `
+                        <div>
+                            <span class="status-indicator status-connected"></span>
+                            <strong>Database Status:</strong> Connected ✓
+                        </div>
+                        <div class="db-details">
+                            Database: ${data.database || 'N/A'}<br>
+                            Last checked: ${new Date(data.timestamp).toLocaleString()}
+                        </div>
+                    `;
+                } else {
+                    statusEl.innerHTML = `
+                        <div>
+                            <span class="status-indicator status-disconnected"></span>
+                            <strong>Database Status:</strong> Disconnected ✗
+                        </div>
+                        <div class="db-details">
+                            ${data.message || 'Connection failed'}<br>
+                            ${data.error ? `Error: ${data.error}` : ''}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                statusEl.innerHTML = `
+                    <div>
+                        <span class="status-indicator status-disconnected"></span>
+                        <strong>Database Status:</strong> Error
+                    </div>
+                    <div class="db-details">
+                        Could not check database status<br>
+                        ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        // Check status on page load
+        checkDatabaseStatus();
+
+        // Recheck every 30 seconds
+        setInterval(checkDatabaseStatus, 30000);
+    </script>
 </body>
 </html>

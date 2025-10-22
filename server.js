@@ -7,13 +7,81 @@ const http = require('http');
 const https = require('https');
 const fs = require('fs');
 const path = require('path');
+const { MongoClient } = require('mongodb');
 
 const isAzure = !!process.env.WEBSITE_INSTANCE_ID; // auto-detect if running in Azure
 const PORT = process.env.PORT || 3000;
 
+// MongoDB connection string - should be set in Azure App Service Configuration
+const MONGODB_URI = process.env.MONGODB_URI || process.env.COSMOS_CONNECTION_STRING;
+
 const htmlContent = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8');
 
+// MongoDB connection test function
+async function testMongoConnection() {
+  if (!MONGODB_URI) {
+    return {
+      connected: false,
+      error: 'MongoDB connection string not configured',
+      message: 'Please set MONGODB_URI or COSMOS_CONNECTION_STRING in environment variables'
+    };
+  }
+
+  let client;
+  try {
+    client = new MongoClient(MONGODB_URI, {
+      serverSelectionTimeoutMS: 5000,
+      connectTimeoutMS: 5000,
+    });
+    
+    await client.connect();
+    await client.db('admin').command({ ping: 1 });
+    
+    const dbName = client.db().databaseName || 'default';
+    
+    return {
+      connected: true,
+      message: 'Successfully connected to MongoDB',
+      database: dbName,
+      timestamp: new Date().toISOString()
+    };
+  } catch (error) {
+    return {
+      connected: false,
+      error: error.message,
+      message: 'Failed to connect to MongoDB'
+    };
+  } finally {
+    if (client) {
+      await client.close();
+    }
+  }
+}
+
 const requestHandler = (req, res) => {
+  // Health check endpoint for database connection
+  if (req.url === '/api/db-status') {
+    res.writeHead(200, {
+      'Content-Type': 'application/json',
+      'X-Content-Type-Options': 'nosniff',
+      'Access-Control-Allow-Origin': '*'
+    });
+    
+    testMongoConnection()
+      .then(status => {
+        res.end(JSON.stringify(status, null, 2));
+      })
+      .catch(err => {
+        res.end(JSON.stringify({
+          connected: false,
+          error: err.message,
+          message: 'Unexpected error testing connection'
+        }, null, 2));
+      });
+    return;
+  }
+
+  // Default HTML response
   res.writeHead(200, {
     'Content-Type': 'text/html',
     'X-Content-Type-Options': 'nosniff',

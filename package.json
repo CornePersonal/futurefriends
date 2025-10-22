@@ -13,10 +13,15 @@
   "engines": {
     "node": ">=22.0.0"
   },
-  "keywords": ["landing-page", "https", "tls"],
+  "keywords": [
+    "landing-page",
+    "https",
+    "tls"
+  ],
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "mongodb": "^6.20.0",
     "selfsigned": "^2.4.1"
   }
 }
