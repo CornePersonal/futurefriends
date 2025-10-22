@@ -21,7 +21,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "mongodb": "^6.20.0",
+    "mongodb": "^4.17.2",
     "selfsigned": "^2.4.1"
   }
 }
