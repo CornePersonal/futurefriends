@@ -13,7 +13,7 @@ const isAzure = !!process.env.WEBSITE_INSTANCE_ID; // auto-detect if running in 
 const PORT = process.env.PORT || 3000;
 
 // MongoDB connection string - should be set in Azure App Service Configuration
-const MONGODB_URI = process.env.MONGODB_URI || process.env.COSMOS_CONNECTION_STRING;
+const MONGODB_URI = process.env.MONGODB_URI || process.env.COSMOS_CONNECTION_STRING || process.env.AZURE_COSMOS_CONNECTIONSTRING;
 
 const htmlContent = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8');
 
