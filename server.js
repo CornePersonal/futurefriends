@@ -1,18 +1,16 @@
 const http = require('http');
+const https = require('https');
 const fs = require('fs');
 const path = require('path');
 
+const isAzure = !!process.env.WEBSITE_INSTANCE_ID; // auto-detect if running in Azure
 const PORT = process.env.PORT || 3000;
 
-// HTTPS/TLS configuration removed for Azure App Service
-// Azure App Service handles TLS termination at the platform level
-
-// Read the HTML file
+// Read HTML file
 const htmlContent = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8');
 
-// Create HTTP server
-const server = http.createServer((req, res) => {
-  // Handle all routes with the coming soon page
+// Server handler (shared by both HTTP/HTTPS)
+const requestHandler = (req, res) => {
   res.writeHead(200, {
     'Content-Type': 'text/html',
     'X-Content-Type-Options': 'nosniff',
@@ -20,42 +18,57 @@ const server = http.createServer((req, res) => {
     'X-XSS-Protection': '1; mode=block'
   });
   res.end(htmlContent);
-});
+};
 
-server.listen(PORT, () => {
-  console.log('╔═══════════════════════════════════════════════════════════╗');
-  console.log('║                                                           ║');
-  console.log('║   🚀 Future Friends - Coming Soon Page                   ║');
-  console.log('║                                                           ║');
-  console.log('║   ✓ Server running on HTTP                               ║');
-  console.log(`║   ✓ Port: ${PORT}                                           ║`);
-  console.log('║   ✓ Azure App Service compatible                         ║');
-  console.log('║                                                           ║');
-  console.log('║   Note: Azure App Service handles HTTPS at the           ║');
-  console.log('║   platform level - no certificate needed in code.        ║');
-  console.log('║                                                           ║');
-  console.log('╚═══════════════════════════════════════════════════════════╝');
-});
+if (isAzure) {
+  // 🟩 Running in Azure
+  const server = http.createServer(requestHandler);
 
-// Handle server errors
-server.on('error', (err) => {
-  console.error('Server error:', err);
-  process.exit(1);
-});
-
-// Graceful shutdown
-process.on('SIGTERM', () => {
-  console.log('\nShutting down gracefully...');
-  server.close(() => {
-    console.log('Server closed');
-    process.exit(0);
+  server.listen(PORT, '0.0.0.0', () => {
+    console.log('╔═══════════════════════════════════════════════════════════╗');
+    console.log('║                                                           ║');
+    console.log('║   🚀 Future Friends - Coming Soon Page                   ║');
+    console.log('║                                                           ║');
+    console.log('║   ✓ Running in Azure App Service                         ║');
+    console.log(`║   ✓ HTTP on port: ${PORT}                                   ║`);
+    console.log('║   ✓ TLS handled by Azure platform                        ║');
+    console.log('║                                                           ║');
+    console.log('╚═══════════════════════════════════════════════════════════╝');
   });
-});
+} else {
+  // 🧑‍💻 Local development (HTTPS if certs available)
+  let server;
+  const certDir = path.join(__dirname, 'certs');
+  const keyPath = path.join(certDir, 'key.pem');
+  const certPath = path.join(certDir, 'cert.pem');
 
-process.on('SIGINT', () => {
-  console.log('\nShutting down gracefully...');
-  server.close(() => {
-    console.log('Server closed');
-    process.exit(0);
-  });
-});
+  if (fs.existsSync(keyPath) && fs.existsSync(certPath)) {
+    const options = {
+      key: fs.readFileSync(keyPath),
+      cert: fs.readFileSync(certPath)
+    };
+    server = https.createServer(options, requestHandler);
+
+    server.listen(8080, () => {
+      console.log('╔═══════════════════════════════════════════════════════════╗');
+      console.log('║                                                           ║');
+      console.log('║   🚀 Future Friends - Local Dev Server                   ║');
+      console.log('║                                                           ║');
+      console.log('║   ✓ HTTPS (self-signed)                                  ║');
+      console.log('║   ✓ URL: https://localhost:8080                          ║');
+      console.log('║                                                           ║');
+      console.log('╚═══════════════════════════════════════════════════════════╝');
+    });
+  } else {
+    // fallback to HTTP if no certs
+    server = http.createServer(requestHandler);
+    server.listen(8080, () => {
+      console.log('⚠️  No certs found — running on plain HTTP instead.');
+      console.log('👉  Visit: http://localhost:8080');
+    });
+  }
+}
+
+// Shared error/shutdown handlers
+process.on('SIGTERM', () => process.exit(0));
+process.on('SIGINT', () => process.exit(0));
